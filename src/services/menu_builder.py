@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from services.inventory_control import InventoryMapping
 from services.menu_data import MenuData
+from src.models.dish import Dish
 
 DATA_PATH = "data/menu_base_data.csv"
 INVENTORY_PATH = "data/inventory_base_data.csv"
@@ -25,5 +26,27 @@ class MenuBuilder:
         self.inventory.consume_recipe(curr_dish.recipe)
 
     # Req 4
-    def get_main_menu(self, restriction=None) -> List[Dict]:
-        pass
+    def get_main_menu(self, restriction: str = None) -> List[Dict]:
+        menu_items = []
+
+        for dish in self.menu_data.dishes:
+            if (
+                restriction is None
+                or restriction not in dish.get_restrictions()
+            ):
+                if self._are_ingredients_available(dish):
+                    menu_item = {
+                        "dish_name": dish.name,
+                        "ingredients": list(dish.get_ingredients()),
+                        "price": dish.price,
+                        "restrictions": list(dish.get_restrictions())
+                    }
+                    menu_items.append(menu_item)
+
+        return menu_items
+
+    def _are_ingredients_available(self, dish: Dish) -> bool:
+        for ingredient in dish.get_ingredients():
+            if self.inventory.inventory.get(ingredient, 0) <= 0:
+                return False
+        return True
